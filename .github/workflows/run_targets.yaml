@@ -21,10 +21,19 @@ jobs:
       with:
         r-version: "4.2.1"
 
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
     - name: Install dependencies with renv
       run: |
         Rscript -e 'install.packages("renv")'
         Rscript -e 'renv::restore(packages = setdiff(renv::dependencies()$Package, "R.utils"))'
+
+    - name: Install R.utils separately
+      run: |
+        Rscript -e 'install.packages("R.utils", repos="https://cloud.r-project.org")'
 
     - name: Run targets
       run: |
