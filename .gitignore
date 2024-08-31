@@ -22,8 +22,6 @@ rsconnect/
 # targets
 _targets/
 
-cv_for_pdf.html
-
 .httr-oauth
 .DS_Store
 .quarto
