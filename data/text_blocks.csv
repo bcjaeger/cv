@@ -1,0 +1,2 @@
+loc,text
+intro,"I am a biostastician and data scientist. I work in clinical trials such as [SPRINT](https://www.sprinttrial.org/public/dspHome.cfm), [LEAP](https://school.wakehealth.edu/features/research/leaps-and-bounds-new-ways-to-treat-obesity), and [MoTrPAC](https://motrpac.org/). I'm the developer of [`aorsf`](https://docs.ropensci.org/aorsf/) and I host a free [web application to view hypertension statistics for US adults](https://bcjaeger.shinyapps.io/nhanesShinyBP/)"
