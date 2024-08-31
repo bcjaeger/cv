@@ -22,7 +22,7 @@ jobs:
     - name: Install dependencies with renv
       run: |
         Rscript -e 'install.packages("renv")'
-        Rscript -e 'renv::restore()'
+        Rscript -e 'renv::restore(packages = setdiff(renv::dependencies()$Package, "R.utils"))'
 
     - name: Run targets
       run: |
