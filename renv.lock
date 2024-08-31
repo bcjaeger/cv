@@ -99,7 +99,7 @@
     },
     "R.utils": {
       "Package": "R.utils",
-      "Version": "2.12.0",
+      "Version": "2.12.3",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -110,7 +110,7 @@
         "tools",
         "utils"
       ],
-      "Hash": "d31333e10f14027e1cbbc6f266512806"
+      "Hash": "3dc2829b790254bfba21e60965787651"
     },
     "R6": {
       "Package": "R6",
