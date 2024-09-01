@@ -41,17 +41,16 @@ jobs:
       run: |
         Rscript -e 'targets::tar_make(cv_html)'
 
-    - name: Move cv.html to docs
+    - name: Move cv.html to root
       run: |
-        mkdir -p docs
-        mv cv.html docs/cv.html
+        mv cv.html index.html
 
     - name: Deploy to GitHub Pages
-      if: success()  # Only run this step if previous steps were successful
+      if: success()
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs
+        publish_dir: .  # Deploy from the root directory
 
     - name: Clean up
       run: |
