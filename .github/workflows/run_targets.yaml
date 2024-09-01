@@ -34,7 +34,7 @@ jobs:
 
     - name: Run targets
       run: |
-        Rscript -e 'targets::tar_make()'
+        Rscript -e 'targets::tar_make(cv_html)'
 
     - name: Move cv.html to docs
       run: |
