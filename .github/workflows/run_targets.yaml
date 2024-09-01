@@ -26,16 +26,16 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libharfbuzz-dev libfribidi-dev
 
+    - name: Install Pandoc
+      uses: r-lib/actions/setup-pandoc@v2
+      with:
+        pandoc-version: '2.11.4'
 
     - name: Install dependencies with renv
       run: |
         Rscript -e 'install.packages("renv")'
         Rscript -e 'renv::restore(packages = setdiff(renv::dependencies()$Package, "R.utils"))'
 
-    - name: Install Pandoc
-      uses: r-lib/actions/setup-pandoc@v2
-      with:
-        pandoc-version: '2.11.4'
 
     - name: Run targets
       run: |
