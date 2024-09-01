@@ -1,0 +1,156 @@
+---
+title: "Byron C Jaeger's CV"
+author: Byron C Jaeger
+date: "`r Sys.Date()`"
+params:
+  pdf_mode:
+    value: false
+output:
+  pagedown::html_resume:
+    css: ['dd_cv.css', 'resume']
+    self_contained: true
+---
+
+```{r, include=FALSE}
+
+knitr::opts_chunk$set(
+  results='asis', 
+  echo = FALSE
+)
+
+# Read in all data and initialize a CV printer object
+withr::with_dir(
+  new = here::here(),
+  code = {
+    targets::tar_load(names = c(cv_data_html, cv_data_pdf))
+  }
+)
+
+CV <- if(params$pdf_mode) cv_data_pdf else cv_data_html
+
+```
+
+
+```{r}
+# When in pdf export mode the little dots are unaligned, so fix that with some conditional CSS.
+if(params$pdf_mode) {
+    cat("
+<style>
+:root{
+  --decorator-outer-offset-left: -6.5px;
+}
+</style>")
+}
+```
+
+
+Aside
+================================================================================
+
+```{r}
+# Build interactive network of positions colored by section
+# and connected if they occurred in the same year
+datadrivencv::build_network_logo(CV$entries)
+```
+
+
+```{r}
+if(params$pdf_mode){
+  cat("View this CV online with links at _insert url_")
+} else {
+  cat("[<i class='fas fa-download'></i> Download a PDF of this CV](https://github.com/bcjaeger/cv/blob/main/cv.pdf)")
+}
+```
+
+Contact {#contact}
+--------------------------------------------------------------------------------
+
+```{r}
+CV |> print_contact_info()
+```
+
+
+
+Language Skills {#skills}
+--------------------------------------------------------------------------------
+
+```{r}
+CV |> print_skill_bars()
+```
+
+
+
+Disclaimer {#disclaimer}
+--------------------------------------------------------------------------------
+
+Made with the R package [**pagedown**](https://github.com/rstudio/pagedown). 
+
+The source code is available [on github](https://github.com/bcjaeger/cv).
+
+Last updated on `r Sys.Date()`.
+
+
+
+Main
+================================================================================
+
+Byron C Jaeger {#title}
+--------------------------------------------------------------------------------
+
+```{r}
+# Note the assignment back to CV. This is so the link stripping works properly in PDF mode
+CV <- print_text_block(CV, "intro") 
+```
+
+
+
+Education {data-icon=graduation-cap data-concise=true}
+--------------------------------------------------------------------------------
+
+```{r}
+CV <- print_section(CV, 'education')
+```
+
+
+
+Academic Appointments {data-icon=laptop}
+--------------------------------------------------------------------------------
+
+```{r}
+CV <- print_section(CV, 'research_positions')
+```
+
+Peer Reviewed Publications {data-icon=book}
+--------------------------------------------------------------------------------
+  
+```{r}
+
+CV <- print_section(
+  CV, 
+  section_id = 'peer_reviewed_articles',
+  glue_template = "
+### {title}
+
+{loc}
+
+N/A
+
+{timeline}
+
+{description_bullets}
+
+::: aside
+Citations: {institution}
+:::
+
+\n\n\n"
+)
+
+```
+
+```{r}
+print_links(CV)
+```
+
+
+
