@@ -148,6 +148,16 @@ Citations: {institution}
 
 ```
 
+Abstracts and Poster Presentations {data-icon=comments}
+--------------------------------------------------------------------------------
+  
+```{r}
+
+CV <- print_section(CV, section_id = 'abstracts')
+
+```
+
+
 ```{r}
 print_links(CV)
 ```
