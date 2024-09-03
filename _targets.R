@@ -20,7 +20,8 @@ entries_init_tar <- tar_target(entries_init, command = read_csv(entries_file))
 entries_tar <- tar_target(entries, command = {
   entries_init %>%
     bind_papers(scholar_pubs) %>%
-    bind_abstracts(scholar_pubs)
+    bind_abstracts(scholar_pubs) %>%
+    bind_rpacks(scholar_pubs)
 })
 
 skills_file_tar <- tar_target(skills_file,
