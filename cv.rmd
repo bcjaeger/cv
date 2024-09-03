@@ -111,8 +111,6 @@ Education {data-icon=graduation-cap data-concise=true}
 CV <- print_section(CV, 'education')
 ```
 
-
-
 Academic Appointments {data-icon=laptop}
 --------------------------------------------------------------------------------
 
@@ -147,6 +145,18 @@ Citations: {institution}
 )
 
 ```
+
+
+R Packages {data-icon=box-archive}
+--------------------------------------------------------------------------------
+  
+```{r}
+
+CV <- print_section(CV, section_id = 'r_packages')
+
+```
+
+
 
 Abstracts and Poster Presentations {data-icon=comments}
 --------------------------------------------------------------------------------
