@@ -1,0 +1,11 @@
+package,repo,scholar_pubid,suite_repo
+r2glmm,bcjaeger/r2glmm,u-x6o8ySG0sC,
+table.glue,bcjaeger/table.glue,,
+PooledCohort,bcjaeger/PooledCohort,,
+aorsf,ropensci/aorsf,_xSYboBqXhAC,
+cardioStatsUSA,jhs-hwg/cardioStatsUSA,,
+perinary,perisphere-rwe/perinary,,perisphere-rwe/pericircle
+peripal,perisphere-rwe/peripal,,perisphere-rwe/pericircle
+peridefs,perisphere-rwe/peridefs,,perisphere-rwe/pericircle
+pericircumference,perisphere-rwe/pericircumference,,perisphere-rwe/pericircle
+periglue,perisphere-rwe/periglue,,perisphere-rwe/pericircle

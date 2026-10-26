@@ -11,6 +11,48 @@ scholar_stats_tar <- tar_target(scholar_stats, get_profile(scholar_id))
 
 scholar_pubs_tar <- tar_target(scholar_pubs, get_publications(scholar_id))
 
+# recent works from open APIs; always re-run so new papers appear
+openalex_pubs_tar <- tar_target(
+  openalex_pubs,
+  fetch_openalex_works(my_orcid, pub_search_start, mailto = my_email),
+  cue = tar_cue(mode = "always")
+)
+
+epmc_pubs_tar <- tar_target(
+  epmc_pubs,
+  fetch_europepmc_works(my_epmc_author, pub_search_start),
+  cue = tar_cue(mode = "always")
+)
+
+pub_exclusions_file_tar <- tar_target(pub_exclusions_file,
+                                      command = "data/pub_exclusions.csv",
+                                      format = 'file')
+
+pub_exclusions_tar <- tar_target(
+  pub_exclusions,
+  read_csv(pub_exclusions_file, col_types = "ccc")
+)
+
+recent_pubs_tar <- tar_target(
+  recent_pubs,
+  combine_recent_pubs(openalex_pubs, epmc_pubs, exclusions = pub_exclusions)
+)
+
+r_packages_file_tar <- tar_target(r_packages_file,
+                                  command = "data/r_packages.csv",
+                                  format = 'file')
+
+r_packages_tar <- tar_target(
+  r_packages,
+  read_csv(r_packages_file, col_types = "cccc")
+)
+
+rpack_info_tar <- tar_target(
+  rpack_info,
+  fetch_rpack_info(r_packages, scholar_pubs),
+  cue = tar_cue(mode = "always")
+)
+
 entries_file_tar <- tar_target(entries_file,
                                command = "data/entries_init.csv",
                                format = 'file')
@@ -19,9 +61,9 @@ entries_init_tar <- tar_target(entries_init, command = read_csv(entries_file))
 
 entries_tar <- tar_target(entries, command = {
   entries_init %>%
-    bind_papers(scholar_pubs) %>%
-    bind_abstracts(scholar_pubs) %>%
-    bind_rpacks(scholar_pubs)
+    bind_papers(scholar_pubs, recent_pubs) %>%
+    bind_abstracts(scholar_pubs, recent_pubs) %>%
+    bind_rpacks(rpack_info)
 })
 
 skills_file_tar <- tar_target(skills_file,
@@ -79,6 +121,14 @@ cv_pdf_print_tar <- tar_target(cv_pdf_print,
 targets <- list(
   scholar_stats_tar,
   scholar_pubs_tar,
+  openalex_pubs_tar,
+  epmc_pubs_tar,
+  pub_exclusions_file_tar,
+  pub_exclusions_tar,
+  recent_pubs_tar,
+  r_packages_file_tar,
+  r_packages_tar,
+  rpack_info_tar,
   entries_file_tar,
   entries_init_tar,
   entries_tar,

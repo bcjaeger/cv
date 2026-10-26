@@ -94,26 +94,26 @@ create_CV_object <- function(skills,
 # Remove links from a text block and add to internal list
 sanitize_links <- function(cv, text) {
   if (cv$pdf_mode) {
-    link_titles <- stringr::str_extract_all(text, "(?<=\\[).+?(?=\\])")[[1]]
-    link_destinations <- stringr::str_extract_all(text, "(?<=\\().+?(?=\\))")[[1]]
+    # Match only full markdown links, [title](destination), so plain
+    # parenthetical text isn't mistaken for a link destination
+    link_matches <- stringr::str_match_all(text, "\\[([^\\]]+?)\\]\\(([^)]+?)\\)")[[1]]
 
     n_links <- length(cv$links)
-    n_new_links <- length(link_titles)
+    n_new_links <- nrow(link_matches)
 
     if (n_new_links > 0) {
-      # add links to links array
-      cv$links <- c(cv$links, link_destinations)
+      cv$links <- c(cv$links, link_matches[, 3])
 
-      # Build map of link destination to superscript
-      link_superscript_mappings <- purrr::set_names(
-        paste0("<sup>", (1:n_new_links) + n_links, "</sup>"),
-        paste0("(", link_destinations, ")")
+      replacements <- paste0(
+        link_matches[, 2],
+        "<sup>", seq_len(n_new_links) + n_links, "</sup>"
       )
 
-      # Replace the link destination and remove square brackets for title
-      text <- text |>
-        stringr::str_replace_all(stringr::fixed(link_superscript_mappings)) |>
-        stringr::str_replace_all("\\[(.+?)\\]", "\\1")
+      for (j in seq_len(n_new_links)) {
+        text <- stringr::str_replace(
+          text, stringr::fixed(link_matches[j, 1]), replacements[j]
+        )
+      }
     }
   }
 
@@ -140,7 +140,7 @@ print_section <- function(cv, section_id, glue_template = "default") {
 
   section_data <- dplyr::filter(cv$entries, section == section_id)
 
-  if (length(section_data) == 0) {
+  if (nrow(section_data) == 0) {
     stop(glue::glue("Tried to print section {section_id} with no entries. Make sure everything is spelled correctly or remove this section."))
   }
 
@@ -148,7 +148,7 @@ print_section <- function(cv, section_id, glue_template = "default") {
   # so links for the same position are right next to each other in number.
   for (i in 1:nrow(section_data)) {
     for (col in c("title", "description_bullets")) {
-      strip_res <- sanitize_links(cv, section_data[i, col])
+      strip_res <- sanitize_links(cv, section_data[[col]][i])
       section_data[i, col] <- strip_res$text
       cv <- strip_res$cv
     }
@@ -156,7 +156,7 @@ print_section <- function(cv, section_id, glue_template = "default") {
 
   print(glue::glue_data(section_data, glue_template))
 
-  invisible(strip_res$cv)
+  invisible(cv)
 }
 
 

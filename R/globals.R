@@ -1,4 +1,14 @@
 
+# identifiers used to pull recent work from open bibliographic APIs
+# (see R/fetch_pubs.R)
+my_orcid <- "0000-0001-7399-2299"
+my_epmc_author <- "Jaeger BC"
+my_email <- "bcjaeger@perisphere-rwe.com" # OpenAlex 'polite pool'
+
+# works published on/after this date are pulled from OpenAlex + Europe PMC
+# and merged with Google Scholar (duplicates are removed by title)
+pub_search_start <- "2024-01-01"
+
 # ids of all my peer reviewed articles
 my_article_ids <- c(
   "hFOr9nPyWt4C",

@@ -1,20 +1,50 @@
 
-
-bind_papers <- function(entries_init, scholar_pubs){
+#' Add peer reviewed articles to the entries table.
+#'
+#' Articles come from two places:
+#'   1. Google Scholar items whose pubid is listed in `my_article_ids`
+#'   2. Recent works from OpenAlex / Europe PMC (see R/fetch_pubs.R) that are
+#'      not already covered by (1).
+bind_papers <- function(entries_init, scholar_pubs, recent_pubs = NULL){
 
   articles <- scholar_pubs %>%
     filter(pubid %in% my_article_ids | cid %in% my_article_ids) %>%
     clean_author_list("BC Jaeger")
 
-  entries_out <- entries_init %>%
-    add_row(section = "peer_reviewed_articles",
-            title = articles$title,
-            loc = glue::glue_data(articles, "{author}<br/>*{journal}*. {number}."),
-            institution = as.character(articles$cites),
-            start = articles$year,
-            end = articles$year)
+  scholar_rows <- tibble(
+    title = articles$title,
+    loc = as.character(glue::glue_data(articles, "{author}<br/>*{journal}*. {number}.")),
+    cites = as.integer(articles$cites),
+    year = as.integer(articles$year)
+  )
 
-  entries_out
+  new_rows <- recent_rows(recent_pubs, "article", existing = scholar_rows$title)
+
+  rows <- bind_rows(scholar_rows, new_rows)
+
+  entries_init %>%
+    add_row(section = "peer_reviewed_articles",
+            title = rows$title,
+            loc = rows$loc,
+            institution = as.character(rows$cites),
+            start = rows$year,
+            end = rows$year)
+
+}
+
+#' Recent works of a given kind that are not already on Google Scholar
+recent_rows <- function(recent_pubs, kind_wanted, existing) {
+
+  if (is.null(recent_pubs) || nrow(recent_pubs) == 0) {
+    return(tibble(title = character(), loc = character(),
+                  cites = integer(), year = integer()))
+  }
+
+  recent_pubs %>%
+    filter(kind == kind_wanted) %>%
+    drop_existing_titles(existing) %>%
+    format_recent_pubs(preferred_name = "BC Jaeger") %>%
+    mutate(loc = as.character(loc))
 
 }
 
@@ -27,19 +57,20 @@ clean_author_list <- function(data, preferred_name){
     group_split(title) %>%
     map_dfr(
       .f = ~ {
-        if(!any(str_detect(.x$author, "Jaeger"))){
+        if(!any(str_detect(.x$author, regex("Jaeger", ignore_case = TRUE)))){
           .x$author[nrow(.x)-1] <- preferred_name
         }
         .x$author <- paste(.x$author, collapse = ', ')
         .x[1, ]
       }
     ) %>%
-    mutate(author = str_replace(author, "BC Jaeger", name_emboldened),
-           author = str_replace(author, "B Jaeger", name_emboldened))
+    mutate(author = str_replace(author,
+                                regex("\\bB(C)? Jaeger\\b", ignore_case = TRUE),
+                                name_emboldened))
 
 }
 
-bind_abstracts <- function(entries_init, scholar_pubs){
+bind_abstracts <- function(entries_init, scholar_pubs, recent_pubs = NULL){
 
   abstracts <- scholar_pubs %>%
     filter(str_detect(tolower(journal), "conference") |
@@ -47,93 +78,60 @@ bind_abstracts <- function(entries_init, scholar_pubs){
              str_detect(tolower(number), "supp")) %>%
     clean_author_list("BC Jaeger")
 
+  scholar_rows <- tibble(
+    title = abstracts$title,
+    loc = as.character(glue::glue_data(abstracts, "{author}<br/>*{journal}*. {number}.")),
+    year = as.integer(abstracts$year)
+  )
+
+  new_rows <- recent_rows(recent_pubs, "abstract", existing = scholar_rows$title)
+
+  rows <- bind_rows(scholar_rows, select(new_rows, -cites))
+
   entries_init %>%
     add_row(section = "abstracts",
-            title = abstracts$title,
-            loc = glue::glue_data(abstracts, "{author}<br/>*{journal}*. {number}."),
-            start = abstracts$year,
-            end = abstracts$year)
+            title = rows$title,
+            loc = rows$loc,
+            start = rows$year,
+            end = rows$year)
 
 }
 
-bind_rpacks <- function(entries_init, scholar_pubs){
+#' Add R packages to the entries table using metadata from fetch_rpack_info()
+bind_rpacks <- function(entries_init, rpack_info){
 
-  rpack_ids <- c('_xSYboBqXhAC' = 'aorsf',
-                 'u-x6o8ySG0sC' = 'r2glmm')
-
-  rpack_repos <- c('bcjaeger/r2glmm' = 'r2glmm',
-                   'bcjaeger/table.glue' = 'table.glue',
-                   "jhs-hwg/cardioStatsUSA" = 'cardioStatsUSA',
-                   "bcjaeger/PooledCohort" = 'PooledCohort',
-                   'ropensci/aorsf' = 'aorsf')
-
-  rpack_dl_recent <- cran_downloads(packages = rpack_repos,
-                                    from = today() - 30,
-                                    to = today()) %>%
-    filter(count > 0) %>%
-    group_by(package) %>%
-    summarize(downloads_last_30 = sum(count)) %>%
-    rename(title = package)
-
-  rpack_dl_total <- cran_downloads(packages = rpack_repos,
-                                   from = "2016-09-15", # r2glmm released
-                                   to = today()) %>%
-    filter(count > 0) %>%
-    group_by(package) %>%
-    summarize(downloads_total = sum(count),
-              year = year(min(date))) %>%
-    rename(title = package)
-
-  rpack_stars <- names(rpack_repos) %>%
-    set_names(rpack_repos) %>%
-    map_int(
-      .f = ~ gh::gh(
-        endpoint = paste0("GET /repos/", .x, "/stargazers"),
-        .accept = "application/vnd.github.v3.star+json",
-        .limit = Inf
-      ) %>%
-        length()
-    ) %>%
-    enframe(name = 'title',
-            value = 'stars_github')
-
-  rpacks <- filter(scholar_pubs, pubid %in% names(rpack_ids)) %>%
-    transmute(
-      description_1 = glue("Accompanying paper: {title}. *{journal}*. {number}"),
-      title = recode(pubid, !!!rpack_ids)
-    ) %>%
-    right_join(rpack_stars, by = 'title') %>%
-    left_join(rpack_dl_recent, by = 'title') %>%
-    left_join(rpack_dl_total, by = 'title') %>%
+  rpacks <- rpack_info %>%
+    arrange(desc(start_year), package) %>%
     mutate(
-      description_2 = table_glue("Downloaded {downloads_last_30} times in \\
-                                  last 30 days, downloaded {downloads_total} \\
-                                  times in total"),
-      description_3 = table_glue("GitHub stars: {stars_github}")
+      suite = basename(suite_repo),
+      suite_note = if_else(
+        is.na(suite_repo), NA_character_,
+        as.character(glue("Part of the [`{suite}`](https://github.com/{suite_repo}) family of packages"))
+      ),
+      usage_note = if_else(
+        on_cran,
+        as.character(table_glue("On CRAN: downloaded {downloads_last_30} times in the last \\
+                                 30 days and {downloads_total} times in total")),
+        as.character(glue("Available on [GitHub]({repo_url})"))
+      ),
+      version_note = case_when(
+        !is.na(pkg_version) & !is.na(stars_github) ~
+          as.character(glue("Version {pkg_version}; GitHub stars: {stars_github}")),
+        !is.na(stars_github) ~ as.character(glue("GitHub stars: {stars_github}")),
+        !is.na(pkg_version) ~ as.character(glue("Version {pkg_version}")),
+        TRUE ~ NA_character_
+      )
     )
 
   entries_init %>%
     add_row(section = "r_packages",
-            title = rpacks$title,
-            loc = rpacks$loc,
-            start = rpacks$year,
+            title = rpacks$package,
+            loc = rpacks$pkg_title,
+            start = rpacks$start_year,
             end = year(today()),
-            description_1 = rpacks$description_1,
-            description_2 = rpacks$description_2)
+            description_1 = coalesce(as.character(rpacks$paper),
+                                     as.character(rpacks$suite_note)),
+            description_2 = as.character(rpacks$usage_note),
+            description_3 = as.character(rpacks$version_note))
 
 }
-
-# scholar_data <- get_publications(scholar_id) %>%
-#   as_tibble() %>%
-#   mutate(is_preprint = str_detect(tolower(journal), "xiv"),
-#          is_abstract =
-#            str_detect(tolower(journal), "conference") |
-#            str_detect(tolower(number), "supp"))
-#
-# preprints <- scholar_data %>%
-#   filter(is_preprint)
-#
-# abstracts <- scholar_data %>%
-#   filter(is_abstract)
-#
-

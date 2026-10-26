@@ -56,7 +56,7 @@ datadrivencv::build_network_logo(CV$entries)
 
 ```{r}
 if(params$pdf_mode){
-  cat("View this CV online with links at _insert url_")
+  cat("View this CV online with links at https://bcjaeger.github.io/cv/")
 } else {
   cat("[<i class='fas fa-download'></i> Download a PDF of this CV](https://github.com/bcjaeger/cv/blob/main/cv.pdf)")
 }
@@ -111,7 +111,7 @@ Education {data-icon=graduation-cap data-concise=true}
 CV <- print_section(CV, 'education')
 ```
 
-Academic Appointments {data-icon=laptop}
+Professional Appointments {data-icon=laptop}
 --------------------------------------------------------------------------------
 
 ```{r}
