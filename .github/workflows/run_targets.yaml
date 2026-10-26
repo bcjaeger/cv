@@ -1,57 +1,33 @@
-name: Run Targets Workflow and Publish to GitHub Pages
+name: Publish CV to GitHub Pages
 
+# cv.html is rendered locally with targets::tar_make(cv_html) and committed;
+# this workflow only publishes it.
 on:
-  schedule:
-    # Run at 8 PM every day
-    - cron: "0 20 * * *"
   push:
     branches:
-      - main  # You can specify other branches if needed
+      - main
+    paths:
+      - cv.html
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  run_targets:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up R
-      uses: r-lib/actions/setup-r@v2
-      with:
-        r-version: "4.2.1"
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp cv.html _site/index.html
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libharfbuzz-dev libfribidi-dev
-
-    - name: Install Pandoc
-      uses: r-lib/actions/setup-pandoc@v2
-      with:
-        pandoc-version: '2.11.4'
-
-    - name: Install dependencies with renv
-      run: |
-        Rscript -e 'install.packages("renv")'
-        Rscript -e 'renv::restore(packages = setdiff(renv::dependencies()$Package, "R.utils"))'
-
-
-    - name: Run targets
-      run: |
-        Rscript -e 'targets::tar_make(cv_html)'
-
-    - name: Move cv.html to root
-      run: |
-        mv cv.html index.html
-
-    - name: Deploy to GitHub Pages
-      if: success()
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: .  # Deploy from the root directory
-
-    - name: Clean up
-      run: |
-        rm -rf docs
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
