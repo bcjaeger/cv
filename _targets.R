@@ -101,7 +101,7 @@ cv_data_tar <- tar_map(
 cv_html_tar <- tar_render(cv_html,
                           path = "cv.rmd",
                           params = data.frame(pdf_mode = FALSE),
-                          output_file = "cv.html")
+                          output_file = "index.html")
 
 cv_pdf_tar <- tar_render(cv_pdf,
                          path = "cv.rmd",
